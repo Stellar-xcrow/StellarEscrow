@@ -68,4 +68,13 @@ export default {
     notifications: 'Notification center',
     notificationPrefs: 'Notification preferences',
   },
+  home: {
+    title: 'StellarEscrow',
+    subtitle: 'Secure, decentralized escrow on the Stellar network.',
+    viewTrade: 'View a Trade',
+    viewTradeDesc: 'Look up an existing trade by ID and check its status.',
+    createTradeDesc: 'Start a new escrow trade as buyer or seller.',
+    comingSoon: 'Coming Soon',
+    comingSoonDesc: 'More features on the way.',
+  },
 };
