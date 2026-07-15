@@ -1,8 +1,16 @@
 version: "3.8"
 
+# StellarEscrow local stack
+# Services: postgres, redis, indexer, api, frontend, client
+# Run: docker-compose up -d
+# Logs: docker-compose logs -f <service>
+
 services:
   postgres:
     image: postgres:15-alpine
+    labels:
+      com.stellarescrow.service: "postgres"
+      com.stellarescrow.tier: "data"
     environment:
       POSTGRES_DB: stellar_escrow
       POSTGRES_USER: indexer
@@ -21,6 +29,9 @@ services:
 
   redis:
     image: redis:7-alpine
+    labels:
+      com.stellarescrow.service: "redis"
+      com.stellarescrow.tier: "data"
     # Do NOT expose redis port externally in production
     # ports:
     #   - "6379:6379"
@@ -44,6 +55,9 @@ services:
     build:
       context: .
       dockerfile: indexer/Dockerfile
+    labels:
+      com.stellarescrow.service: "indexer"
+      com.stellarescrow.tier: "app"
     ports:
       - "127.0.0.1:3000:3000"
     environment:
