@@ -36,3 +36,9 @@ scrape_configs:
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
+
+  - job_name: "stellar-escrow-frontend"
+    static_configs:
+      - targets: ["frontend:80"]
+    metrics_path: "/metrics"
+    scrape_interval: 30s
