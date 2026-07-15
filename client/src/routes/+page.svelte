@@ -17,10 +17,10 @@
         <h3 class="text-2xl font-semibold mb-2">{$t('home.viewTrade')}</h3>
         <p>{$t('home.viewTradeDesc')}</p>
       </a>
-      <div class="card p-6">
-        <h3 class="text-2xl font-semibold mb-2">{$t('home.comingSoon')}</h3>
-        <p>{$t('home.comingSoonDesc')}</p>
-      </div>
+      <a href="/trades/create" class="card p-6 hover:shadow-lg">
+        <h3 class="text-2xl font-semibold mb-2">{$t('trade.create')}</h3>
+        <p>{$t('home.createTradeDesc')}</p>
+      </a>
     </div>
   </div>
 </div>
