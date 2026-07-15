@@ -1,6 +1,7 @@
 # Base configuration — shared defaults for all environments.
 # Environment-specific files override these values.
 # Version is bumped on every structural change.
+# Override order: base.toml < environments/<env>.toml < environment variables
 
 [meta]
 version = "1.0.0"
