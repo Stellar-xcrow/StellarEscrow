@@ -10,6 +10,8 @@ export interface TradeCardProps {
   amount: string;
   status: 'created' | 'funded' | 'completed' | 'disputed' | 'cancelled';
   timestamp: string;
+  /** Optional arbitrator address — shown only when present */
+  arbitrator?: string;
   onClick?: () => void;
 }
 
@@ -20,6 +22,7 @@ export const TradeCard: React.FC<TradeCardProps> = ({
   amount,
   status,
   timestamp,
+  arbitrator,
   onClick,
 }) => {
   const statusVariant = status === 'completed' ? 'success' : status === 'disputed' ? 'danger' : 'info';
@@ -42,6 +45,12 @@ export const TradeCard: React.FC<TradeCardProps> = ({
           <span className="party-label">Buyer:</span>
           <span className="party-address">{buyer.slice(0, 10)}...</span>
         </div>
+        {arbitrator && (
+          <div className="trade-party">
+            <span className="party-label">Arbitrator:</span>
+            <span className="party-address">{arbitrator.slice(0, 10)}...</span>
+          </div>
+        )}
         <div className="trade-amount">
           <span className="amount-label">Amount:</span>
           <span className="amount-value">{amount} USDC</span>
