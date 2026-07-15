@@ -1,3 +1,11 @@
+# =============================================================================
+# StellarEscrow Indexer — Local Configuration
+# =============================================================================
+# This file contains local/development overrides.
+# Production values are supplied via environment variables or a secrets manager.
+# See config/base.toml for the full list of supported keys and their defaults.
+# =============================================================================
+
 [server]
 port = 3000
 
