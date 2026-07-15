@@ -1,3 +1,8 @@
+/**
+ * Redux store — configures reducers, persistence, middleware, and DevTools.
+ * Persisted slices: trades, ui, locale.
+ * Non-persisted: events, escrowApi (always fetched fresh).
+ */
 import { configureStore, combineReducers, ThunkAction, Action, Middleware } from '@reduxjs/toolkit';
 import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';

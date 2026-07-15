@@ -36,6 +36,7 @@ function fromEnv(): Partial<ApiConfig> {
   if (env.STELLAR_ESCROW_WS_URL)       partial.wsUrl = env.STELLAR_ESCROW_WS_URL;
   if (env.STELLAR_ESCROW_TIMEOUT_MS)   partial.timeoutMs = Number(env.STELLAR_ESCROW_TIMEOUT_MS);
   if (env.STELLAR_ESCROW_RETRY_MAX)    partial.retryMax = Number(env.STELLAR_ESCROW_RETRY_MAX);
+  if (env.STELLAR_ESCROW_RETRY_DELAY_MS) partial.retryDelayMs = Number(env.STELLAR_ESCROW_RETRY_DELAY_MS);
   if (env.STELLAR_ESCROW_MOCK === 'true') partial.mockEnabled = true;
 
   return partial;

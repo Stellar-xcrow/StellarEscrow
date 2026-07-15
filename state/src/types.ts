@@ -10,6 +10,10 @@ export interface Trade {
   status: 'created' | 'funded' | 'completed' | 'disputed' | 'cancelled';
   arbitrator?: string;
   timestamp: string;
+  /** Unix timestamp (seconds) when the trade was created on-chain */
+  createdAt?: number;
+  /** Fee in basis points applied to this trade */
+  feeBps?: number;
 }
 
 export type TradesState = EntityState<Trade> & {
