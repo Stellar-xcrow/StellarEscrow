@@ -24,6 +24,15 @@ export const selectEventsByTradeId = (state: RootState, tradeId: string): Event[
 export const selectEventsLoading = (state: RootState): boolean => state.events.loading;
 export const selectEventsError = (state: RootState): string | null => state.events.error;
 
+// Derived / convenience selectors
+export const selectTradeCount = (state: RootState): number =>
+  tradeSelectors.selectTotal(state);
+
+export const selectActiveTrades = (state: RootState): Trade[] =>
+  tradeSelectors.selectAll(state).filter(
+    (t) => t.status === 'created' || t.status === 'funded' || t.status === 'disputed'
+  );
+
 // UI selectors
 export const selectSelectedTradeId = (state: RootState): string | null =>
   state.ui.selectedTradeId;
