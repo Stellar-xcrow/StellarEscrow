@@ -3,6 +3,10 @@ kind: Kustomization
 
 namespace: stellar-escrow
 
+# Resources are applied in declaration order.
+# base/  — namespace, secrets, configmap, ingress, network policies
+# data/  — postgres (primary DB), redis (cache)
+# app/   — indexer (Rust event monitor), api (Node.js gateway), client (SvelteKit UI), frontend (static JS)
 resources:
   - base/namespace.yaml
   - base/secrets.yaml
