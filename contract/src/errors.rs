@@ -1,5 +1,14 @@
 use soroban_sdk::contracterror;
 
+/// Enumeration of all contract-level errors.
+/// Each variant maps to a unique `u32` discriminant returned to the caller.
+/// Ranges:
+///   1–33   Core escrow errors
+///   40–44  Oracle errors
+///   50–54  AMM errors
+///   60–66  Upgrade system errors
+///   70–74  Multi-sig arbitration errors
+///   80–94  Bridge errors
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
