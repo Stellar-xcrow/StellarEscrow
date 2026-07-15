@@ -48,3 +48,13 @@ export function escrowList(n: number, overrides: Partial<EscrowRecord> = {}): Es
 export function resetEscrowSeq(start = 1): void {
   _tradeIdSeq = start;
 }
+
+/** Convenience: create an escrow already in `completed` status */
+export function completedEscrow(overrides: Partial<EscrowRecord> = {}): EscrowRecord {
+  return escrowFactory({ status: 'completed', ...overrides });
+}
+
+/** Convenience: create an escrow in `disputed` status with an arbitrator set */
+export function disputedEscrow(overrides: Partial<EscrowRecord> = {}): EscrowRecord {
+  return escrowFactory({ status: 'disputed', arbitrator: overrides.arbitrator ?? stellarAddress(), ...overrides });
+}
