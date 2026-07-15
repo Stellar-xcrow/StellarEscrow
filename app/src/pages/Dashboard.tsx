@@ -46,6 +46,11 @@ export default function Dashboard() {
         >
           <h1 id="dashboard-title" style={{ fontSize: '1.5rem' }}>
             Trades
+            {trades.length > 0 && (
+              <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#666', marginLeft: '0.5rem' }}>
+                ({trades.length})
+              </span>
+            )}
           </h1>
 
           <Link
