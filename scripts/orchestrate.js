@@ -17,6 +17,24 @@ const args = process.argv.slice(2);
 const suiteArg = args.find(a => a.startsWith('--suite='))?.split('=')[1] ?? 'all';
 const env = args.find(a => a.startsWith('--env='))?.split('=')[1] ?? 'development';
 
+// --help: print usage and exit
+if (args.includes('--help') || args.includes('-h')) {
+  console.log(`
+Usage: node scripts/orchestrate.js [options]
+
+Options:
+  --suite=<name>   Suite to run: unit | api | uat | a11y | all  (default: all)
+  --env=<name>     Target environment: development | staging | ci  (default: development)
+  --help, -h       Show this help message
+
+Examples:
+  node scripts/orchestrate.js
+  node scripts/orchestrate.js --suite=unit --env=ci
+  node scripts/orchestrate.js --suite=api --env=staging
+`);
+  process.exit(0);
+}
+
 const SUITES = {
   unit:       { cwd: 'testing/regression',     cmd: 'npm run test:ci', label: 'Unit Regression', needsApi: true },
   api:        { cwd: 'api',                     cmd: 'npm run test',    label: 'API Tests' },
