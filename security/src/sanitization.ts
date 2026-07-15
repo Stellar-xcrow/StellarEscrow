@@ -44,3 +44,12 @@ export const validateUrl = (url: string): boolean => {
 export const validateAddress = (address: string): boolean => {
   return /^G[A-Z2-7]{55}$/.test(address);
 };
+
+/**
+ * Strip ASCII control characters (U+0000–U+001F, U+007F) from a string.
+ * Useful for sanitizing user-supplied text before storage or display.
+ */
+export const stripControlChars = (input: string): string => {
+  // eslint-disable-next-line no-control-regex
+  return input.replace(/[\x00-\x1F\x7F]/g, '');
+};

@@ -1,6 +1,15 @@
 import React from 'react';
 import './Button.css';
 
+/**
+ * Button — base interactive element used throughout StellarEscrow.
+ *
+ * Variants: primary | secondary | danger | success
+ * Sizes:    sm | md | lg
+ *
+ * Shows a spinner and sets aria-busy when `loading` is true.
+ * Forwards refs so it can be composed with tooltip/popover libraries.
+ */
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg';
