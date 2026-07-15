@@ -28,6 +28,8 @@ const ERROR_MESSAGES = {
   403: 'You do not have permission to do that.',
   404: 'The requested resource was not found.',
   429: 'Too many requests. Please wait a moment and try again.',
+  500: 'A server error occurred. Our team has been notified.',
+  503: 'Service temporarily unavailable. Please try again shortly.',
   500: 'Server error. Our team has been notified.',
   503: 'Service unavailable. You may be offline.',
   // Named codes from API
