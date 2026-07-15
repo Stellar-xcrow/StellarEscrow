@@ -23,6 +23,8 @@ pub struct QueuedTransaction {
     pub unsigned_xdr: String,
     pub operation: String,
     pub created_at: u64,
+    /// Optional Unix timestamp (seconds) after which this queued tx should be discarded
+    pub expires_at: Option<u64>,
 }
 
 /// Minimal trade info optimized for mobile display
