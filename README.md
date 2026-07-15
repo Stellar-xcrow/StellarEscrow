@@ -88,3 +88,12 @@ node scripts/orchestrate.js --suite unit --env ci
 CI workflow is in `.github/workflows/test-framework.yml` with nightly schedules, PR comments, artifact upload, and report snapshot.
 
 
+
+## Contributing
+
+1. Fork the repo and create a feature branch from `main`
+2. Make your changes with clear, focused commits
+3. Ensure `cargo test` and `pnpm test` pass locally
+4. Open a pull request — CI will run the full test matrix automatically
+
+Please follow the existing code style and keep PRs small and focused.
