@@ -11,6 +11,12 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 soroban-sdk = "21.7.0"
+# soroban-env-host declares `ed25519-dalek = ">=2.0.0"` with no upper bound, so
+# Cargo's resolver picks up ed25519-dalek 3.0.0 as soon as it's published — but
+# soroban-env-host 21.2.1's own testutils code isn't compatible with 3.0's
+# reworked rand_core::CryptoRng trait (E0277 on ChaCha20Rng). Cap it below 3.0
+# so the whole tree resolves to the version soroban-env-host actually works with.
+ed25519-dalek = "<3.0.0"
 
 [dev-dependencies]
 soroban-sdk = { version = "21.7.0", features = ["testutils"] }
