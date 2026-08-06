@@ -638,6 +638,8 @@ pub struct UserSearchQuery {
     pub q: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PushRegistrationRequest {
     pub device_token: String,
@@ -665,7 +667,6 @@ pub struct DisputeEvidenceResponse {
     pub file: FileRecord,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct EvidenceDownloadToken {
     pub token: Uuid,

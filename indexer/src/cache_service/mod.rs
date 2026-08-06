@@ -428,6 +428,8 @@ impl CacheService {
         if !keys.iter().any(|existing| existing == key) {
             keys.push(key.to_string());
         }
+    }
+
     pub async fn get_search<T: serde::de::DeserializeOwned>(&self, cache_key: &str) -> Option<T> {
         self.get(cache_key).await
     }
