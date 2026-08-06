@@ -77,6 +77,9 @@ pub fn create_trade(h: &Harness, amount: u64) -> u64 {
         &amount,
         &None,
         &OptionalMetadata::None,
+        &None,
+        &None,
+        &None,
     )
 }
 
@@ -87,6 +90,9 @@ pub fn create_disputed_trade(h: &Harness, amount: u64) -> u64 {
         &amount,
         &Some(h.arbitrator.clone()),
         &OptionalMetadata::None,
+        &None,
+        &None,
+        &None,
     );
     approve_funding(h, amount as i128);
     h.client.fund_trade(&id);

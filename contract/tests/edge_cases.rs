@@ -39,7 +39,7 @@ fn edge_rejects_partial_resolution_above_100_percent() {
 
     assert!(
         h.client
-            .try_resolve_dispute(&id, &DisputeResolution::Partial(10_001))
+            .try_resolve_dispute(&id, &DisputeResolution::Partial { buyer_bps: 10_001 })
             .is_err()
     );
 }
@@ -95,6 +95,9 @@ fn edge_rejects_insurance_purchase_for_unfunded_trade() {
         &1_000_000u64,
         &None,
         &OptionalMetadata::None,
+        &None,
+        &None,
+        &None,
     );
 
     assert!(

@@ -258,7 +258,7 @@ pub fn create_cross_chain_trade(
     let cross_chain_trade = CrossChainTrade {
         trade_id,
         source_chain,
-        dest_chain: String::from_small_copy(env, "stellar"),
+        dest_chain: String::from_str(env, "stellar"),
         source_tx_hash,
         bridge_provider,
         attestation_id,
@@ -332,7 +332,7 @@ pub fn validate_bridge_attestation(
         return Ok(BridgeValidation {
             valid: false,
             error_code: Some(1),
-            error_message: Some(String::from_small_copy(env, "Invalid signature")),
+            error_message: Some(String::from_str(env, "Invalid signature")),
             confirmations: 0,
         });
     }
@@ -344,7 +344,7 @@ pub fn validate_bridge_attestation(
         return Ok(BridgeValidation {
             valid: false,
             error_code: Some(2),
-            error_message: Some(String::from_small_copy(env, "Amount out of range")),
+            error_message: Some(String::from_str(env, "Amount out of range")),
             confirmations: 0,
         });
     }
@@ -358,7 +358,7 @@ pub fn validate_bridge_attestation(
         return Ok(BridgeValidation {
             valid: false,
             error_code: Some(3),
-            error_message: Some(String::from_small_copy(env, "Attestation already processed")),
+            error_message: Some(String::from_str(env, "Attestation already processed")),
             confirmations: 0,
         });
     }

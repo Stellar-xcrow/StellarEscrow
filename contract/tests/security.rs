@@ -17,7 +17,7 @@ fn security_blocks_state_changes_while_paused() {
     assert!(h.client.try_complete_trade(&id).is_err());
     assert!(
         h.client
-            .try_create_trade(&h.seller, &h.buyer, &1_000_000u64, &None, &OptionalMetadata::None)
+            .try_create_trade(&h.seller, &h.buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None)
             .is_err()
     );
 }
@@ -73,6 +73,9 @@ fn security_only_registered_arbitrators_can_back_disputed_trades() {
                 &1_000_000u64,
                 &Some(rogue_arbitrator),
                 &OptionalMetadata::None,
+                &None,
+                &None,
+                &None,
             )
             .is_err()
     );
@@ -95,7 +98,7 @@ fn security_rejects_fee_withdrawal_when_pool_is_empty() {
     let h = setup();
     let recipient = Address::generate(&h.env);
 
-    assert!(h.client.try_withdraw_fees(&recipient).is_err());
+    assert!(h.client.try_withdraw_fees_legacy(&recipient).is_err());
 }
 
 #[test]

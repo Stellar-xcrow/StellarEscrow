@@ -17,7 +17,7 @@ fn integration_happy_path_accumulates_and_withdraws_fees() {
     h.client.confirm_receipt(&id);
 
     let recipient = Address::generate(&h.env);
-    h.client.withdraw_fees(&recipient);
+    h.client.withdraw_fees_legacy(&recipient);
 
     assert_eq!(token::Client::new(&h.env, &h.token_addr).balance(&h.seller), 990_000);
     assert_eq!(token::Client::new(&h.env, &h.token_addr).balance(&recipient), 10_000);
@@ -34,13 +34,16 @@ fn integration_dispute_partial_resolution_preserves_fee_accounting() {
         &1_000_000u64,
         &Some(h.arbitrator.clone()),
         &OptionalMetadata::None,
+        &None,
+        &None,
+        &None,
     );
 
     approve_funding(&h, 1_000_000);
     h.client.fund_trade(&id);
     h.client.raise_dispute(&id, &h.buyer);
     h.client
-        .resolve_dispute(&id, &DisputeResolution::Partial(4_000));
+        .resolve_dispute(&id, &DisputeResolution::Partial { buyer_bps: 4_000 });
 
     assert_eq!(h.client.get_trade(&id).status, TradeStatus::Disputed);
     assert_eq!(h.client.get_accumulated_fees(), 10_000);
@@ -91,6 +94,9 @@ fn integration_insurance_claim_flow_pays_out_provider_coverage() {
         &1_000_000u64,
         &Some(h.arbitrator.clone()),
         &OptionalMetadata::None,
+        &None,
+        &None,
+        &None,
     );
 
     approve_funding(&h, 1_000_000);
