@@ -13,7 +13,7 @@ groups:
         annotations:
           summary: "High authentication failure rate"
           description: "{{ $value | humanize }} auth failures/sec — possible brute-force attack."
-          runbook: "https://github.com/Mystery-CLI/StellarEscrow/blob/main/docs/security.md#auth-failures"
+          runbook: "https://github.com/Mystery-CLI/StellarEscrow/blob/main/SECURITY.md#auth-failures"
 
       - alert: AdminKeyUsedFromUnknownIP
         expr: |

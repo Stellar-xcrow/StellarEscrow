@@ -73,7 +73,7 @@ groups:
         annotations:
           summary: "Rate limit exceeded - possible abuse"
           description: "{{ $value | humanize }} rate-limited requests/sec on tier {{ $labels.tier }}."
-          runbook: "https://github.com/Mystery-CLI/StellarEscrow/blob/main/docs/security.md#rate-limiting"
+          runbook: "https://github.com/Mystery-CLI/StellarEscrow/blob/main/SECURITY.md#rate-limiting"
 
       # ── Blacklist hit increase ────────────────────────────────────────────
       - alert: BlacklistHitsIncreasing

@@ -29,7 +29,7 @@
 | Document | Location |
 |----------|----------|
 | Analytics API | [docs/analytics.md](analytics.md) |
-| Security policies | [docs/security.md](security.md) |
+| Security policies | [SECURITY.md](../SECURITY.md) |
 | Environment variables | [docs/environments.md](environments.md) |
 | Bridge integration | [docs/BRIDGE_INTEGRATION.md](BRIDGE_INTEGRATION.md) |
 | Testing guidelines | [docs/testing/TESTING_GUIDELINES.md](testing/TESTING_GUIDELINES.md) |
