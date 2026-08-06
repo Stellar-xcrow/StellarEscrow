@@ -1,3 +1,5 @@
+[workspace]
+
 [package]
 name = "stellar-escrow-contract"
 version = "0.1.0"
