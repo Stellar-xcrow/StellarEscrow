@@ -1,72 +1,7 @@
-use soroban_sdk::{Address, Env, String};
+use soroban_sdk::{contracttype, symbol_short, Address, Env, String, Symbol};
 
-use crate::types::DisputeResolution;
-
-pub fn emit_arbitrator_registered(_env: &Env, _arbitrator: Address) {}
-pub fn emit_arbitrator_removed(_env: &Env, _arbitrator: Address) {}
-pub fn emit_fee_updated(_env: &Env, _fee_bps: u32) {}
-pub fn emit_compliance_failed(_env: &Env, _user: Address, _reason: &String) {}
-pub fn emit_compliance_updated(_env: &Env, _user: Address) {}
-pub fn emit_trade_created(
-    _env: &Env,
-    _trade_id: u64,
-    _seller: Address,
-    _buyer: Address,
-    _amount: u64,
-    _currency: Address,
-) {
-}
-pub fn emit_compliance_passed(
-    _env: &Env,
-    _trade_id: u64,
-    _seller: Address,
-    _buyer: Address,
-    _amount: u64,
-) {
-}
-pub fn emit_trade_funded(_env: &Env, _trade_id: u64) {}
-pub fn emit_trade_completed(_env: &Env, _trade_id: u64) {}
-pub fn emit_trade_confirmed(_env: &Env, _trade_id: u64, _payout: u64, _fee: u64) {}
-pub fn emit_dispute_raised(_env: &Env, _trade_id: u64, _raised_by: Address) {}
-pub fn emit_dispute_resolved(
-    _env: &Env,
-    _trade_id: u64,
-    _resolution: DisputeResolution,
-    _recipient: Address,
-) {
-}
-pub fn emit_partial_resolved(
-    _env: &Env,
-    _trade_id: u64,
-    _buyer_amount: u64,
-    _seller_amount: u64,
-    _fee: u64,
-) {
-}
-pub fn emit_trade_cancelled(_env: &Env, _trade_id: u64) {}
-pub fn emit_fees_withdrawn(_env: &Env, _amount: u64, _to: Address) {}
-pub fn emit_paused(_env: &Env, _admin: Address) {}
-pub fn emit_unpaused(_env: &Env, _admin: Address) {}
-pub fn emit_bridge_oracle_set(_env: &Env, _oracle: Address) {}
-pub fn emit_bridge_trade_created(_env: &Env, _trade_id: u64, _source_chain: String) {}
-pub fn emit_bridge_deposit_confirmed(_env: &Env, _trade_id: u64) {}
-pub fn emit_bridge_trade_expired(_env: &Env, _trade_id: u64) {}
-pub fn emit_insurance_provider_registered(_env: &Env, _provider: Address) {}
-pub fn emit_insurance_provider_removed(_env: &Env, _provider: Address) {}
-pub fn emit_insurance_purchased(
-    _env: &Env,
-    _trade_id: u64,
-    _provider: Address,
-    _premium: u64,
-    _coverage: u64,
-) {
-}
-pub fn emit_insurance_claimed(_env: &Env, _trade_id: u64, _payout: u64, _recipient: Address) {}
-pub fn emit_migrated(_env: &Env, _from_version: u32, _to_version: u32) {}
 /// Current event schema version. Bump when payload fields change.
 pub const EVENT_VERSION: u32 = 2;
-
-use soroban_sdk::{contracttype, symbol_short, Address, Env, String, Symbol};
 
 use crate::types::{DisputeResolution, SubscriptionTier, UserTier};
 
@@ -172,8 +107,6 @@ pub struct EvBridgeProviderRegistered { pub v: u32, pub provider: String, pub or
 #[contracttype] #[derive(Clone, Debug)]
 pub struct EvBridgeProviderDeactivated { pub v: u32, pub provider: String }
 #[contracttype] #[derive(Clone, Debug)]
-pub struct EvBridgeTradeCreated { pub v: u32, pub trade_id: u64, pub source_chain: String, pub source_tx_hash: String, pub bridge_provider: String }
-#[contracttype] #[derive(Clone, Debug)]
 pub struct EvBridgeAttestationReceived { pub v: u32, pub trade_id: u64, pub attestation_id: String, pub status: String }
 #[contracttype] #[derive(Clone, Debug)]
 pub struct EvBridgeAttestationConfirmed { pub v: u32, pub trade_id: u64, pub confirmations: u32 }
@@ -262,12 +195,6 @@ pub fn emit_compliance_updated(env: &Env, user: Address) {
         (cat_compliance(), symbol_short!("updated")),
         EvComplianceUpdated { v: EVENT_VERSION, user },
     );
-pub fn emit_compliance_failed(env: &Env, user: Address, reason: &soroban_sdk::String) {
-    env.events().publish((cat_sys(), symbol_short!("compl_fail")), EvComplianceFailed { v: EVENT_VERSION, user, reason: reason.clone() });
-}
-
-pub fn emit_compliance_passed(env: &Env, trade_id: u64, seller: Address, buyer: Address, amount: u64) {
-    env.events().publish((cat_sys(), symbol_short!("compl_pass")), EvCompliancePassed { v: EVENT_VERSION, trade_id, seller, buyer, amount });
 }
 
 pub fn emit_trade_funded(env: &Env, trade_id: u64) {
@@ -458,19 +385,6 @@ pub fn emit_oracle_unavailable(env: &Env, base: Address, quote: Address) {
 pub fn emit_trigger_executed(env: &Env, trade_id: u64, action: &crate::types::TriggerAction) {
     env.events().publish((cat_oracle(), symbol_short!("trig_ex")), EvTriggerExecuted { v: EVENT_VERSION, trade_id, action: action.clone() });
 }
-
-// ---------------------------------------------------------------------------
-// Upgrade system events
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Compliance event payloads
-// ---------------------------------------------------------------------------
-
-#[contracttype] #[derive(Clone, Debug)]
-pub struct EvComplianceFailed  { pub v: u32, pub user: Address, pub reason: String }
-#[contracttype] #[derive(Clone, Debug)]
-pub struct EvCompliancePassed  { pub v: u32, pub trade_id: u64, pub seller: Address, pub buyer: Address, pub amount: u64 }
 
 // ---------------------------------------------------------------------------
 // Upgrade system events

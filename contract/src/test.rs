@@ -79,7 +79,7 @@ fn test_update_fee_invalid() {
 #[test]
 fn test_create_trade() {
     let (_, _, _, seller, buyer, _, client) = setup();
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
     assert_eq!(id, 1);
     let trade = client.get_trade(&id);
     assert_eq!(trade.status, TradeStatus::Created);
@@ -99,7 +99,7 @@ fn test_create_trade_with_compliance_rules() {
     client.set_user_trade_limit(&admin, &seller, &2_000_000u64);
     client.set_global_trade_limit(&admin, &3_000_000u64);
 
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
     assert_eq!(id, 1);
 }
 
@@ -119,7 +119,7 @@ fn test_create_trade_fails_for_unverified_kyc() {
     client.set_user_compliance(&admin, &seller, &seller_compliance);
     client.set_user_compliance(&admin, &buyer, &buyer_compliance);
 
-    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None).is_err());
+    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None).is_err());
 }
 
 #[test]
@@ -134,7 +134,7 @@ fn test_create_trade_fails_for_jurisdiction_block() {
     client.set_user_compliance(&admin, &buyer, &compliant);
     client.set_jurisdiction_rule(&admin, &soroban_sdk::String::from_str(&env, "CN"), &false);
 
-    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None).is_err());
+    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None).is_err());
 }
 
 #[test]
@@ -149,19 +149,19 @@ fn test_create_trade_fails_for_amount_limit() {
     client.set_user_compliance(&admin, &buyer, &compliant);
     client.set_user_trade_limit(&admin, &seller, &500_000u64);
 
-    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None).is_err());
+    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None).is_err());
 }
 
 #[test]
 fn test_create_trade_zero_amount_fails() {
     let (_, _, _, seller, buyer, _, client) = setup();
-    assert!(client.try_create_trade(&seller, &buyer, &0u64, &None, &OptionalMetadata::None).is_err());
+    assert!(client.try_create_trade(&seller, &buyer, &0u64, &None, &OptionalMetadata::None, &None, &None, &None).is_err());
 }
 
 #[test]
 fn test_fund_trade() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, 1_000_000);
     client.fund_trade(&id);
     assert_eq!(client.get_trade(&id).status, TradeStatus::Funded);
@@ -171,7 +171,7 @@ fn test_fund_trade() {
 fn test_complete_and_confirm_trade() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
     let amount = 1_000_000u64;
-    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.complete_trade(&id);
@@ -185,7 +185,7 @@ fn test_complete_and_confirm_trade() {
 #[test]
 fn test_cancel_trade() {
     let (_, _, _, seller, buyer, _, client) = setup();
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
     client.cancel_trade(&id);
     assert_eq!(client.get_trade(&id).status, TradeStatus::Cancelled);
 }
@@ -195,7 +195,7 @@ fn test_dispute_and_resolve_to_buyer() {
     let (env, token_addr, _, seller, buyer, arbitrator, client) = setup();
     client.register_arbitrator(&arbitrator);
     let amount = 1_000_000u64;
-    let id = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.raise_dispute(&id, &buyer);
@@ -210,14 +210,14 @@ fn test_dispute_and_resolve_to_buyer() {
 fn test_withdraw_fees() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
     let amount = 1_000_000u64;
-    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.complete_trade(&id);
     client.confirm_receipt(&id);
 
     let recipient = Address::generate(&env);
-    client.withdraw_fees(&recipient);
+    client.withdraw_fees_legacy(&recipient);
     assert_eq!(token::Client::new(&env, &token_addr).balance(&recipient), 10_000i128);
     assert_eq!(client.get_accumulated_fees(), 0u64);
 }
@@ -227,7 +227,7 @@ fn test_pause_and_unpause() {
     let (_, _, _, seller, buyer, _, client) = setup();
     client.pause();
     assert!(client.is_paused());
-    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None).is_err());
+    assert!(client.try_create_trade(&seller, &buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None).is_err());
     client.unpause();
     assert!(!client.is_paused());
 }
@@ -236,7 +236,7 @@ fn test_pause_and_unpause() {
 fn test_no_fees_to_withdraw_fails() {
     let (env, _, _, _, _, _, client) = setup();
     let recipient = Address::generate(&env);
-    assert!(client.try_withdraw_fees(&recipient).is_err());
+    assert!(client.try_withdraw_fees_legacy(&recipient).is_err());
 }
 
 #[test]
@@ -379,7 +379,7 @@ fn setup_insurance() -> (Env, Address, Address, Address, Address, StellarEscrowC
 }
 
 fn funded_trade(env: &Env, token_addr: &Address, seller: &Address, buyer: &Address, client: &StellarEscrowContractClient) -> u64 {
-    let id = client.create_trade(seller, buyer, &1_000_000u64, &None, &OptionalMetadata::None);
+    let id = client.create_trade(seller, buyer, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
     token::Client::new(env, token_addr).approve(buyer, &client.address, &1_000_000i128, &200u32);
     client.fund_trade(&id);
     id
@@ -446,7 +446,7 @@ fn test_claim_insurance() {
     let arb = Address::generate(&env);
     client.register_arbitrator(&arb);
     // re-create a trade with arbitrator for dispute
-    let id2 = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None);
+    let id2 = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None, &None, &None, &None);
     token::Client::new(&env, &token_addr).approve(&buyer, &client.address, &1_000_000i128, &200u32);
     client.fund_trade(&id2);
     client.purchase_insurance(&id2, &provider, &100u32, &500_000u64);
@@ -470,7 +470,7 @@ fn test_claim_insurance_double_claim_fails() {
 
     let arb = Address::generate(&env);
     client.register_arbitrator(&arb);
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None, &None, &None, &None);
     token::Client::new(&env, &token_addr).approve(&buyer, &client.address, &1_000_000i128, &200u32);
     client.fund_trade(&id);
     client.purchase_insurance(&id, &provider, &100u32, &500_000u64);
@@ -489,7 +489,7 @@ fn test_claim_capped_at_coverage() {
 
     let arb = Address::generate(&env);
     client.register_arbitrator(&arb);
-    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &1_000_000u64, &Some(arb.clone()), &OptionalMetadata::None, &None, &None, &None);
     token::Client::new(&env, &token_addr).approve(&buyer, &client.address, &1_000_000i128, &200u32);
     client.fund_trade(&id);
     // coverage = 50_000
@@ -524,7 +524,7 @@ fn test_analytics_volume_and_unique_addresses() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
     let amount = 1_000_000u64;
 
-    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
 
     let result = client.analytics_query(&crate::analytics::TimeWindow::AllTime);
     assert_eq!(result.all_time.metrics.total_volume, amount);
@@ -534,7 +534,7 @@ fn test_analytics_volume_and_unique_addresses() {
 
     // second trade with same addresses — unique count must not grow
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
-    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     let result2 = client.analytics_query(&crate::analytics::TimeWindow::AllTime);
     assert_eq!(result2.unique_addresses, 2);
     assert_eq!(result2.all_time.metrics.total_volume, amount * 2);
@@ -546,7 +546,7 @@ fn test_analytics_success_rate() {
     let amount = 1_000_000u64;
 
     // Complete one trade
-    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.complete_trade(&id);
@@ -564,7 +564,7 @@ fn test_analytics_dispute_rate() {
     let amount = 1_000_000u64;
     client.register_arbitrator(&arbitrator);
 
-    let id = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.raise_dispute(&id, &buyer);
@@ -581,14 +581,14 @@ fn test_analytics_mixed_success_rate() {
     client.register_arbitrator(&arbitrator);
 
     // Trade 1: completed
-    let id1 = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id1 = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id1);
     client.complete_trade(&id1);
     client.confirm_receipt(&id1);
 
     // Trade 2: disputed (counts as terminal)
-    let id2 = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None);
+    let id2 = client.create_trade(&seller, &buyer, &amount, &Some(arbitrator.clone()), &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id2);
     client.raise_dispute(&id2, &buyer);
@@ -603,7 +603,7 @@ fn test_analytics_window_metrics_track_trades() {
     let (_, _, _, seller, buyer, _, client) = setup();
     let amount = 500_000u64;
 
-    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
 
     let result = client.analytics_query(&crate::analytics::TimeWindow::Last24h);
     assert_eq!(result.window.trades_created, 1);
@@ -615,7 +615,7 @@ fn test_analytics_active_trades() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
     let amount = 1_000_000u64;
 
-    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     let result = client.analytics_query(&crate::analytics::TimeWindow::AllTime);
     assert_eq!(result.all_time.active_trades, 1);
 
@@ -679,6 +679,9 @@ fn test_get_arbitrators_returns_all_registered() {
     let list = client.get_arbitrators();
     assert!(list.contains(&arb1));
     assert!(list.contains(&arb2));
+}
+
+// ---------------------------------------------------------------------------
 // Issue #122 — withdraw_fees (per-currency)
 // ---------------------------------------------------------------------------
 
@@ -686,7 +689,7 @@ fn test_get_arbitrators_returns_all_registered() {
 fn test_withdraw_fees_per_currency_succeeds() {
     let (env, token_addr, _, seller, buyer, _, client) = setup();
     let amount = 1_000_000u64;
-    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None);
+    let id = client.create_trade(&seller, &buyer, &amount, &None, &OptionalMetadata::None, &None, &None, &None);
     fund(&env, &token_addr, &buyer, &client.address, amount as i128);
     client.fund_trade(&id);
     client.complete_trade(&id);

@@ -110,6 +110,9 @@ fn create_n_trades(h: &Harness, n: u32) -> std::vec::Vec<u64> {
             &1_000_000u64,
             &None,
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
         ids.push(id);
     }
@@ -131,7 +134,10 @@ fn run_happy_path(h: &Harness) -> u64 {
         &1_000_000u64,
         &None,
         &OptionalMetadata::None,
-    );
+            &None,
+            &None,
+            &None,
+        );
     h.client.fund_trade(&id);
     h.client.complete_trade(&id);
     h.client.confirm_receipt(&id);
@@ -152,7 +158,10 @@ fn run_dispute_cycle(h: &Harness) {
         &1_000_000u64,
         &Some(h.arbitrator.clone()),
         &OptionalMetadata::None,
-    );
+            &None,
+            &None,
+            &None,
+        );
     h.client.fund_trade(&id);
     h.client.raise_dispute(&id, &buyer);
     h.client.resolve_dispute(
@@ -257,6 +266,9 @@ fn bench_create_trade_instructions() {
             &1_000_000u64,
             &None,
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
     });
 
@@ -290,6 +302,9 @@ fn bench_full_happy_path_instructions() {
             &1_000_000u64,
             &None,
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
         h.client.fund_trade(&id);
         h.client.complete_trade(&id);
@@ -326,6 +341,9 @@ fn bench_dispute_cycle_instructions() {
             &1_000_000u64,
             &Some(h.arbitrator.clone()),
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
         h.client.fund_trade(&id);
         h.client.raise_dispute(&id, &buyer);
@@ -357,7 +375,7 @@ fn bench_fee_withdrawal_instructions() {
 
     let recipient = Address::generate(&h.env);
     let r = bench(&h.env, || {
-        h.client.withdraw_fees(&recipient);
+        h.client.withdraw_fees_legacy(&recipient);
     });
 
     std::println!(
@@ -388,6 +406,9 @@ fn monitor_resource_usage_scales_linearly() {
             &1_000_000u64,
             &None,
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
     });
 
@@ -399,7 +420,7 @@ fn monitor_resource_usage_scales_linearly() {
             mark_compliant(&h, &s);
             mark_compliant(&h, &b);
             h.client
-                .create_trade(&s, &b, &1_000_000u64, &None, &OptionalMetadata::None);
+                .create_trade(&s, &b, &1_000_000u64, &None, &OptionalMetadata::None, &None, &None, &None);
         }
     });
 
@@ -434,6 +455,9 @@ fn monitor_memory_usage_create_trade() {
             &1_000_000u64,
             &None,
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
     });
 
@@ -462,7 +486,7 @@ fn stress_max_amount_trade() {
 
     let id = h
         .client
-        .create_trade(&seller, &buyer, &max_amount, &None, &OptionalMetadata::None);
+        .create_trade(&seller, &buyer, &max_amount, &None, &OptionalMetadata::None, &None, &None, &None);
     let trade = h.client.get_trade(&id);
     assert_eq!(trade.amount, max_amount);
 }

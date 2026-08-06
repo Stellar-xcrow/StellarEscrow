@@ -56,6 +56,9 @@ fn perf_benchmark_dispute_and_insurance_path() {
             &1_000_000u64,
             &Some(h.arbitrator.clone()),
             &OptionalMetadata::None,
+            &None,
+            &None,
+            &None,
         );
         approve_funding(&h, 1_000_000);
         h.client.fund_trade(&id);

@@ -1,66 +1,15 @@
-use soroban_sdk::{symbol_short, Address, Env, String, Symbol, Vec};
+use soroban_sdk::{contracttype, symbol_short, Address, Env, String, Symbol, Vec};
 
 use crate::errors::ContractError;
 use crate::types::{
-    ArbitratorReputation, ArbitratorVote, ArbitrationConfig, CrossChainInfo, DisclosureGrant,
-    InsurancePolicy, MultiSigConfig, Proposal, Subscription, TierConfig, Trade, TradePrivacy,
-    TradeTemplate, UserTierInfo, VotingSummary,
+    ArbitratorReputation, ArbitratorVote, CrossChainInfo, InsurancePolicy, Subscription,
+    TierConfig, Trade, TradeTemplate, UserCompliance, UserTierInfo,
 };
 
 // ---------------------------------------------------------------------------
-// Instance storage keys — symbol_short! is the most gas-efficient encoding
-// for keys stored in instance storage (loaded on every contract call).
+// Instance storage keys — a single DataKey enum for straightforward
+// single-value / single-address-indexed fields.
 // ---------------------------------------------------------------------------
-fn key_init()     -> Symbol { symbol_short!("INIT") }
-fn key_admin()    -> Symbol { symbol_short!("ADMIN") }
-fn key_usdc()     -> Symbol { symbol_short!("USDC") }
-fn key_fee_bps()  -> Symbol { symbol_short!("FEE_BPS") }
-fn key_counter()  -> Symbol { symbol_short!("COUNTER") }
-fn key_acc_fees() -> Symbol { symbol_short!("ACC_FEES") }
-fn key_paused()   -> Symbol { symbol_short!("PAUSED") }
-fn key_tier_cfg() -> Symbol { symbol_short!("TIER_CFG") }
-fn key_tmpl_ctr() -> Symbol { symbol_short!("TMPL_CTR") }
-fn key_version()  -> Symbol { symbol_short!("VERSION") }
-fn key_bridge()   -> Symbol { symbol_short!("BRIDGE") }
-fn key_gov_tkn()  -> Symbol { symbol_short!("GOV_TKN") }
-fn key_prop_ctr() -> Symbol { symbol_short!("PROP_CTR") }
-fn key_glob_lim() -> Symbol { symbol_short!("GLOB_LIM") }
-
-// ---------------------------------------------------------------------------
-// Persistent storage key prefixes — single-char strings minimise key size,
-// directly reducing ledger entry bytes and CPU cost.
-// ---------------------------------------------------------------------------
-const TRADE_PREFIX:           &str = "T";
-const ARB_PREFIX:             &str = "A";
-const USER_TIER_PREFIX:       &str = "U";
-const TEMPLATE_PREFIX:        &str = "P";
-const XCHAIN_PREFIX:          &str = "X";
-const INS_PROVIDER_PREFIX:    &str = "IP";
-const INS_POLICY_PREFIX:      &str = "IPL";
-const CURRENCY_FEES_PREFIX:   &str = "CF";
-const USER_COMPLIANCE_PREFIX: &str = "UC";
-const USER_LIMIT_PREFIX:      &str = "UL";
-const JURISDICTION_PREFIX:    &str = "JR";
-const SUBSCRIPTION_PREFIX:    &str = "SB";
-const PROPOSAL_PREFIX:        &str = "PR";
-const VOTE_PREFIX:            &str = "VT";
-const DELEGATE_PREFIX:        &str = "DL";
-const ARB_REP_PREFIX:         &str = "AR";
-const ARB_RATED_PREFIX:       &str = "RT";
-const MULTISIG_VOTE_PREFIX:   &str = "MV";
-const TRADE_PRIVACY_PREFIX:   &str = "TP";
-const DISCLOSURE_PREFIX:      &str = "DC";
-
-// ---------------------------------------------------------------------------
-// Initialization
-// ---------------------------------------------------------------------------
-use soroban_sdk::{contracttype, Address, Env, String};
-
-use crate::{
-    errors::ContractError,
-    types::{CrossChainInfo, InsurancePolicy, Trade, UserCompliance},
-};
-
 #[contracttype]
 #[derive(Clone)]
 enum DataKey {
@@ -83,6 +32,32 @@ enum DataKey {
     InsuranceProvider(Address),
     InsurancePolicy(u64),
 }
+
+// ---------------------------------------------------------------------------
+// Persistent storage key prefixes for fields without a DataKey variant —
+// single-char strings minimise key size, directly reducing ledger entry
+// bytes and CPU cost.
+// ---------------------------------------------------------------------------
+const CURRENCY_FEES_PREFIX: &str = "CF";
+const USER_TIER_PREFIX: &str = "U";
+const TEMPLATE_PREFIX: &str = "P";
+const SUBSCRIPTION_PREFIX: &str = "SB";
+const ARB_FEE_PREFIX: &str = "AF";
+const ARB_LIST_KEY: &str = "ARBLIST";
+const MULTISIG_VOTE_PREFIX: &str = "MV";
+const ARB_REP_PREFIX: &str = "AR";
+const ARB_RATED_PREFIX: &str = "RT";
+
+fn key_tier_cfg() -> Symbol {
+    symbol_short!("TIER_CFG")
+}
+fn key_tmpl_ctr() -> Symbol {
+    symbol_short!("TMPL_CTR")
+}
+
+// ---------------------------------------------------------------------------
+// Initialization
+// ---------------------------------------------------------------------------
 
 pub fn is_initialized(env: &Env) -> bool {
     env.storage().instance().get(&DataKey::Initialized).unwrap_or(false)
@@ -142,17 +117,14 @@ pub fn get_fee_bps(env: &Env) -> Result<u32, ContractError> {
 // ---------------------------------------------------------------------------
 
 pub fn set_trade_counter(env: &Env, counter: u64) {
-    env.storage().instance().set(&key_counter(), &counter);
-pub fn set_paused(env: &Env, paused: bool) {
-    env.storage().instance().set(&DataKey::Paused, &paused);
-}
-
-pub fn is_paused(env: &Env) -> bool {
-    env.storage().instance().get(&DataKey::Paused).unwrap_or(false)
-}
-
-pub fn set_trade_counter(env: &Env, counter: u64) {
     env.storage().instance().set(&DataKey::TradeCounter, &counter);
+}
+
+pub fn get_trade_counter(env: &Env) -> Result<u64, ContractError> {
+    env.storage()
+        .instance()
+        .get(&DataKey::TradeCounter)
+        .ok_or(ContractError::NotInitialized)
 }
 
 pub fn increment_trade_counter(env: &Env) -> Result<u64, ContractError> {
@@ -172,23 +144,28 @@ pub fn increment_trade_counter(env: &Env) -> Result<u64, ContractError> {
 // ---------------------------------------------------------------------------
 
 pub fn set_accumulated_fees(env: &Env, fees: u64) {
-    env.storage().instance().set(&key_acc_fees(), &fees);
+    env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
 }
 
 pub fn get_accumulated_fees(env: &Env) -> Result<u64, ContractError> {
     env.storage()
         .instance()
-        .get(&key_acc_fees())
+        .get(&DataKey::AccumulatedFees)
         .ok_or(ContractError::NotInitialized)
 }
 
 /// Atomically add `delta` to the legacy accumulated-fees counter in a single
-/// read-modify-write, avoiding a separate get + set pair.
-pub fn add_accumulated_fees(env: &Env, delta: u64) -> Result<(), ContractError> {
-    let current: u64 = env.storage().instance().get(&key_acc_fees()).unwrap_or(0);
-    let new_fees = current.checked_add(delta).ok_or(ContractError::Overflow)?;
-    env.storage().instance().set(&key_acc_fees(), &new_fees);
-    Ok(())
+/// read-modify-write, avoiding a separate get + set pair. Returns the new total.
+pub fn add_accumulated_fees(env: &Env, delta: u64) -> Result<u64, ContractError> {
+    let updated = env
+        .storage()
+        .instance()
+        .get::<_, u64>(&DataKey::AccumulatedFees)
+        .unwrap_or(0)
+        .checked_add(delta)
+        .ok_or(ContractError::Overflow)?;
+    env.storage().instance().set(&DataKey::AccumulatedFees, &updated);
+    Ok(updated)
 }
 
 // ---------------------------------------------------------------------------
@@ -231,7 +208,7 @@ pub fn get_trade(env: &Env, trade_id: u64) -> Result<Trade, ContractError> {
 }
 
 // ---------------------------------------------------------------------------
-// Arbitrators
+// Arbitrators (registration flag)
 // ---------------------------------------------------------------------------
 
 pub fn save_arbitrator(env: &Env, arbitrator: &Address) {
@@ -247,15 +224,14 @@ pub fn remove_arbitrator(env: &Env, arbitrator: &Address) {
 }
 
 pub fn has_arbitrator(env: &Env, arbitrator: &Address) -> bool {
-    let key = (ARB_PREFIX, arbitrator);
-    env.storage().persistent().has(&key)
+    env.storage()
+        .persistent()
+        .has(&DataKey::Arbitrator(arbitrator.clone()))
 }
 
 // ---------------------------------------------------------------------------
 // Arbitrator self-registration with fee (Issue #120)
 // ---------------------------------------------------------------------------
-const ARB_FEE_PREFIX: &str = "AF";
-const ARB_LIST_KEY:   &str = "ARBLIST";
 
 /// Store an arbitrator's self-declared service fee (i128 stroops).
 pub fn save_arbitrator_fee(env: &Env, arbitrator: &Address, fee: i128) {
@@ -277,11 +253,11 @@ pub fn get_arbitrator_fee(env: &Env, arbitrator: &Address) -> i128 {
 
 /// Append `arbitrator` to the persistent registry list (no-op if already present).
 pub fn add_to_arbitrator_list(env: &Env, arbitrator: &Address) {
-    let mut list: soroban_sdk::Vec<Address> = env
+    let mut list: Vec<Address> = env
         .storage()
         .persistent()
         .get(&ARB_LIST_KEY)
-        .unwrap_or_else(|| soroban_sdk::Vec::new(env));
+        .unwrap_or_else(|| Vec::new(env));
     for i in 0..list.len() {
         if list.get(i).unwrap() == *arbitrator {
             return;
@@ -293,12 +269,12 @@ pub fn add_to_arbitrator_list(env: &Env, arbitrator: &Address) {
 
 /// Remove `arbitrator` from the persistent registry list.
 pub fn remove_from_arbitrator_list(env: &Env, arbitrator: &Address) {
-    let list: soroban_sdk::Vec<Address> = env
+    let list: Vec<Address> = env
         .storage()
         .persistent()
         .get(&ARB_LIST_KEY)
-        .unwrap_or_else(|| soroban_sdk::Vec::new(env));
-    let mut new_list = soroban_sdk::Vec::new(env);
+        .unwrap_or_else(|| Vec::new(env));
+    let mut new_list = Vec::new(env);
     for i in 0..list.len() {
         let a = list.get(i).unwrap();
         if a != *arbitrator {
@@ -309,11 +285,11 @@ pub fn remove_from_arbitrator_list(env: &Env, arbitrator: &Address) {
 }
 
 /// Return the full list of registered arbitrators.
-pub fn get_arbitrator_list(env: &Env) -> soroban_sdk::Vec<Address> {
+pub fn get_arbitrator_list(env: &Env) -> Vec<Address> {
     env.storage()
         .persistent()
         .get(&ARB_LIST_KEY)
-        .unwrap_or_else(|| soroban_sdk::Vec::new(env))
+        .unwrap_or_else(|| Vec::new(env))
 }
 
 // ---------------------------------------------------------------------------
@@ -362,11 +338,11 @@ pub fn clear_votes_for_trade(env: &Env, trade_id: u64, arbitrators: &Vec<Address
 // ---------------------------------------------------------------------------
 
 pub fn set_paused(env: &Env, paused: bool) {
-    env.storage().instance().set(&key_paused(), &paused);
+    env.storage().instance().set(&DataKey::Paused, &paused);
 }
 
 pub fn is_paused(env: &Env) -> bool {
-    env.storage().instance().get(&key_paused()).unwrap_or(false)
+    env.storage().instance().get(&DataKey::Paused).unwrap_or(false)
 }
 
 // ---------------------------------------------------------------------------
@@ -399,14 +375,6 @@ pub fn get_user_tier(env: &Env, user: &Address) -> Option<UserTierInfo> {
 // User Compliance
 // ---------------------------------------------------------------------------
 
-pub fn save_user_compliance(env: &Env, user: &Address, compliance: &crate::types::UserCompliance) {
-    let key = (USER_COMPLIANCE_PREFIX, user);
-    env.storage().persistent().set(&key, compliance);
-    env.storage()
-        .persistent()
-        .has(&DataKey::Arbitrator(arbitrator.clone()))
-}
-
 pub fn save_user_compliance(env: &Env, user: &Address, compliance: &UserCompliance) {
     env.storage()
         .persistent()
@@ -437,13 +405,16 @@ pub fn get_user_trade_limit(env: &Env, user: &Address) -> u64 {
 // ---------------------------------------------------------------------------
 
 pub fn set_jurisdiction_rule(env: &Env, jurisdiction: &String, allowed: bool) {
-    let key = (JURISDICTION_PREFIX, jurisdiction);
-    env.storage().persistent().set(&key, &allowed);
+    env.storage()
+        .persistent()
+        .set(&DataKey::JurisdictionRule(jurisdiction.clone()), &allowed);
 }
 
 pub fn is_jurisdiction_allowed(env: &Env, jurisdiction: &String) -> bool {
-    let key = (JURISDICTION_PREFIX, jurisdiction);
-    env.storage().persistent().get(&key).unwrap_or(true)
+    env.storage()
+        .persistent()
+        .get(&DataKey::JurisdictionRule(jurisdiction.clone()))
+        .unwrap_or(true)
 }
 
 // ---------------------------------------------------------------------------
@@ -451,11 +422,14 @@ pub fn is_jurisdiction_allowed(env: &Env, jurisdiction: &String) -> bool {
 // ---------------------------------------------------------------------------
 
 pub fn set_global_trade_limit(env: &Env, limit: u64) {
-    env.storage().instance().set(&key_glob_lim(), &limit);
+    env.storage().instance().set(&DataKey::GlobalTradeLimit, &limit);
 }
 
 pub fn get_global_trade_limit(env: &Env) -> u64 {
-    env.storage().instance().get(&key_glob_lim()).unwrap_or(u64::MAX)
+    env.storage()
+        .instance()
+        .get(&DataKey::GlobalTradeLimit)
+        .unwrap_or(u64::MAX)
 }
 
 // ---------------------------------------------------------------------------
@@ -507,116 +481,27 @@ pub fn remove_subscription(env: &Env, subscriber: &Address) {
 }
 
 // ---------------------------------------------------------------------------
-// Governance — use symbol_short! keys for instance storage, short string
-// prefixes for persistent storage to minimise serialisation cost.
-// ---------------------------------------------------------------------------
-
-pub fn set_gov_token(env: &Env, token: &Address) {
-    env.storage().instance().set(&key_gov_tkn(), token);
-}
-
-pub fn get_gov_token(env: &Env) -> Option<Address> {
-    env.storage().instance().get(&key_gov_tkn())
-}
-
-pub fn get_proposal_counter(env: &Env) -> u64 {
-    env.storage().instance().get(&key_prop_ctr()).unwrap_or(0)
-}
-
-pub fn increment_proposal_counter(env: &Env) -> Result<u64, ContractError> {
-    let next = get_proposal_counter(env)
-        .checked_add(1)
-        .ok_or(ContractError::Overflow)?;
-    env.storage().instance().set(&key_prop_ctr(), &next);
-    Ok(next)
-}
-
-pub fn save_proposal(env: &Env, id: u64, proposal: &Proposal) {
-    let key = (PROPOSAL_PREFIX, id);
-    env.storage().persistent().set(&key, proposal);
-}
-
-pub fn get_proposal(env: &Env, id: u64) -> Result<Proposal, ContractError> {
-    let key = (PROPOSAL_PREFIX, id);
-    env.storage()
-        .persistent()
-        .get(&key)
-        .ok_or(ContractError::ProposalNotFound)
-}
-
-pub fn has_voted(env: &Env, proposal_id: u64, voter: &Address) -> bool {
-    let key = (VOTE_PREFIX, proposal_id, voter);
-    env.storage().persistent().has(&key)
-}
-
-pub fn mark_voted(env: &Env, proposal_id: u64, voter: &Address) {
-    let key = (VOTE_PREFIX, proposal_id, voter);
-    env.storage().persistent().set(&key, &true);
-}
-
-pub fn set_delegate(env: &Env, delegator: &Address, delegatee: &Address) {
-    let key = (DELEGATE_PREFIX, delegator);
-    env.storage().persistent().set(&key, delegatee);
-}
-
-pub fn get_delegate(env: &Env, delegator: &Address) -> Option<Address> {
-    let key = (DELEGATE_PREFIX, delegator);
-    env.storage().persistent().get(&key)
-}
-
-pub fn remove_delegate(env: &Env, delegator: &Address) {
-    let key = (DELEGATE_PREFIX, delegator);
-    env.storage().persistent().remove(&key);
-}
-
-// ---------------------------------------------------------------------------
 // Arbitrator Reputation
 // ---------------------------------------------------------------------------
-pub fn set_jurisdiction_rule(env: &Env, jurisdiction: &String, allowed: bool) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::JurisdictionRule(jurisdiction.clone()), &allowed);
+
+pub fn get_arbitrator_reputation(env: &Env, arbitrator: &Address) -> ArbitratorReputation {
+    let key = (ARB_REP_PREFIX, arbitrator);
+    env.storage().persistent().get(&key).unwrap_or(ArbitratorReputation {
+        rating_sum: 0,
+        rating_count: 0,
+        resolved_count: 0,
+        total_disputes: 0,
+    })
 }
 
-pub fn is_jurisdiction_allowed(env: &Env, jurisdiction: &String) -> bool {
-    env.storage()
-        .persistent()
-        .get(&DataKey::JurisdictionRule(jurisdiction.clone()))
-        .unwrap_or(true)
+pub fn save_arbitrator_reputation(env: &Env, arbitrator: &Address, rep: &ArbitratorReputation) {
+    let key = (ARB_REP_PREFIX, arbitrator);
+    env.storage().persistent().set(&key, rep);
 }
 
-pub fn set_global_trade_limit(env: &Env, limit: u64) {
-    env.storage().instance().set(&DataKey::GlobalTradeLimit, &limit);
-}
-
-pub fn get_global_trade_limit(env: &Env) -> u64 {
-    env.storage()
-        .instance()
-        .get(&DataKey::GlobalTradeLimit)
-        .unwrap_or(u64::MAX)
-}
-
-pub fn set_accumulated_fees(env: &Env, fees: u64) {
-    env.storage().instance().set(&DataKey::AccumulatedFees, &fees);
-}
-
-pub fn get_accumulated_fees(env: &Env) -> Result<u64, ContractError> {
-    env.storage()
-        .instance()
-        .get(&DataKey::AccumulatedFees)
-        .ok_or(ContractError::NotInitialized)
-}
-
-pub fn add_accumulated_fees(env: &Env, delta: u64) -> Result<u64, ContractError> {
-    let updated = env
-        .storage()
-        .instance()
-        .get::<_, u64>(&DataKey::AccumulatedFees)
-        .unwrap_or(0)
-        .checked_add(delta)
-        .ok_or(ContractError::Overflow)?;
-    env.storage().instance().set(&DataKey::AccumulatedFees, &updated);
-    Ok(updated)
+pub fn has_rated(env: &Env, trade_id: u64, rater: &Address) -> bool {
+    let key = (ARB_RATED_PREFIX, trade_id, rater);
+    env.storage().persistent().has(&key)
 }
 
 pub fn mark_rated(env: &Env, trade_id: u64, rater: &Address) {
@@ -636,12 +521,8 @@ pub fn get_version(env: &Env) -> u32 {
     env.storage().instance().get(&DataKey::Version).unwrap_or(1)
 }
 
-pub fn set_version(env: &Env, version: u32) {
-    env.storage().instance().set(&key_version(), &version);
-}
-
 // ---------------------------------------------------------------------------
-// Bridge Oracle
+// Bridge Oracle (simple single-oracle cross-chain flow)
 // ---------------------------------------------------------------------------
 
 pub fn set_bridge_oracle(env: &Env, oracle: &Address) {
@@ -653,7 +534,7 @@ pub fn get_bridge_oracle(env: &Env) -> Option<Address> {
 }
 
 // ---------------------------------------------------------------------------
-// Cross-Chain Info
+// Cross-Chain Info (simple single-oracle cross-chain flow)
 // ---------------------------------------------------------------------------
 
 pub fn save_cross_chain_info(env: &Env, trade_id: u64, info: &CrossChainInfo) {
@@ -701,37 +582,6 @@ pub fn save_insurance_policy(env: &Env, trade_id: u64, policy: &InsurancePolicy)
 }
 
 pub fn get_insurance_policy(env: &Env, trade_id: u64) -> Option<InsurancePolicy> {
-    let key = (INS_POLICY_PREFIX, trade_id);
-    env.storage().persistent().get(&key)
-}
-
-// ---------------------------------------------------------------------------
-// Privacy
-// ---------------------------------------------------------------------------
-
-pub fn save_trade_privacy(env: &Env, trade_id: u64, privacy: &TradePrivacy) {
-    let key = (TRADE_PRIVACY_PREFIX, trade_id);
-    env.storage().persistent().set(&key, privacy);
-}
-
-pub fn get_trade_privacy(env: &Env, trade_id: u64) -> Option<TradePrivacy> {
-    let key = (TRADE_PRIVACY_PREFIX, trade_id);
-    env.storage().persistent().get(&key)
-}
-
-pub fn save_disclosure_grant(env: &Env, trade_id: u64, grantee: &Address, grant: &DisclosureGrant) {
-    let key = (DISCLOSURE_PREFIX, trade_id, grantee);
-    env.storage().persistent().set(&key, grant);
-}
-
-pub fn get_disclosure_grant(env: &Env, trade_id: u64, grantee: &Address) -> Option<DisclosureGrant> {
-    let key = (DISCLOSURE_PREFIX, trade_id, grantee);
-    env.storage().persistent().get(&key)
-}
-
-pub fn remove_disclosure_grant(env: &Env, trade_id: u64, grantee: &Address) {
-    let key = (DISCLOSURE_PREFIX, trade_id, grantee);
-    env.storage().persistent().remove(&key);
     env.storage()
         .persistent()
         .get(&DataKey::InsurancePolicy(trade_id))
