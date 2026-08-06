@@ -1,10 +1,8 @@
 target/
-Cargo.lock
 *.wasm
 *.optimized.wasm
 .soroban/
 node_modules/
-package-lock.json
 
 # Environment files — track templates, never real secrets
 .env
