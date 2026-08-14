@@ -93,7 +93,7 @@ pub fn voting_summary(env: &Env, trade_id: u64) -> Result<VotingSummary, Contrac
         match votes.get(i).unwrap().resolution {
             DisputeResolution::ReleaseToBuyer => release_to_buyer += 1,
             DisputeResolution::ReleaseToSeller => release_to_seller += 1,
-            DisputeResolution::Partial { buyer_bps } => {
+            DisputeResolution::Partial(buyer_bps) => {
                 let mut found = false;
                 for j in 0..partial.len() {
                     let (bps, cnt) = partial.get(j).unwrap();
@@ -119,7 +119,7 @@ pub fn voting_summary(env: &Env, trade_id: u64) -> Result<VotingSummary, Contrac
         for i in 0..partial.len() {
             let (bps, cnt) = partial.get(i).unwrap();
             if cnt >= threshold {
-                found = Some(DisputeResolution::Partial { buyer_bps: bps });
+                found = Some(DisputeResolution::Partial(bps));
                 break;
             }
         }
