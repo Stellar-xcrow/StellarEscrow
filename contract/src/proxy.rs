@@ -1,7 +1,7 @@
 use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env, Symbol, Val, Vec};
 
 const STORAGE_ADMIN: Symbol = symbol_short!("ADMIN");
-const STORAGE_LOGIC: Symbol = symbol_short!("LOGIC_ADDR");
+const STORAGE_LOGIC: Symbol = symbol_short!("LOGIC_ADR"); // symbol_short! max is 9 chars ("LOGIC_ADDR" was 10)
 
 #[contract]
 pub struct EscrowProxy;

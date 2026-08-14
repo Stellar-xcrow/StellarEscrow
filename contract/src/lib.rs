@@ -738,7 +738,7 @@ impl StellarEscrowContract {
         Ok(())
     }
 
-    /// Use `DisputeResolution::Partial { buyer_bps }` for a split:
+    /// Use `DisputeResolution::Partial(buyer_bps)` for a split:
     /// `buyer_bps` is the buyer's share of the net payout in basis points (0–10000).
     /// Only applies to single-arbitrator trades — multi-sig trades resolve via
     /// `cast_vote` consensus or `resolve_expired_dispute`.
@@ -1284,7 +1284,7 @@ fn execute_dispute_resolution(
             token_client.transfer(&env.current_contract_address(), &trade.seller, &(net as i128));
             events::emit_dispute_resolved(&env, trade_id, resolution, trade.seller);
         }
-        DisputeResolution::Partial { buyer_bps } => {
+        DisputeResolution::Partial(buyer_bps) => {
             if buyer_bps > 10_000 {
                 return Err(ContractError::InvalidSplitBps);
             }

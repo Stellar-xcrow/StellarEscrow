@@ -2,14 +2,50 @@ use soroban_sdk::contracterror;
 
 /// Enumeration of all contract-level errors.
 /// Each variant maps to a unique `u32` discriminant returned to the caller.
-/// Ranges:
-///   1–39    Core escrow / tier / template / subscription / governance / privacy errors
-///   40–44   Oracle errors
-///   50–54   AMM errors (amm.rs is not currently wired into the contract)
-///   60–66   Upgrade system errors
-///   70–74   Multi-sig arbitration errors
-///   80–94   Bridge errors
-///   110–119 Price-trigger errors
+///
+/// # Cleanup note (crate reconstruction)
+/// This enum previously had 91 variants, which exceeds Soroban's contract-spec XDR
+/// hard cap of 50 cases for an error enum (`ScSpecUdtErrorEnumV0::cases: VecM<_, 50>`
+/// in stellar-xdr 21.2.0) — past that limit `#[contracterror]` panics with
+/// `LengthExceedsMax`. It was trimmed to 48 variants by removing only unreachable
+/// dead code (verified with grep across the whole crate; nothing below was ever
+/// constructed by any function reachable from `#[contractimpl] impl
+/// StellarEscrowContract`, live or otherwise) — no surviving variant's discriminant
+/// or meaning changed, and none were merged/consolidated:
+///   - 16 variants that existed only for governance.rs / privacy.rs / social.rs /
+///     amm.rs. None of those files are declared as `mod` anywhere in lib.rs, so they
+///     were never compiled at all.
+///   - 5 upgrade-system variants (UpgradeInProgress, NoUpgradeProposal,
+///     UpgradeTimelockActive, NoUpgradeInProgress, RollbackWindowExpired). lib.rs's
+///     own `migrate()` re-implements versioning directly against storage.rs and never
+///     calls upgrade.rs; its propose/execute/run_migration/rollback/cancel functions
+///     had zero callers, so they were deleted along with these errors (the
+///     `UpgradeProposal` / `RollbackSnapshot` *types* are kept — still re-exported).
+///   - 13 of 15 bridge-family variants (BridgeProviderNotFound,
+///     BridgeProviderAlreadyRegistered, BridgeProviderLimitExceeded,
+///     BridgeTradeNotFound, BridgeRetryLimitExceeded, BridgeAttestationInvalid,
+///     BridgeAttestationExpired, BridgeAmountOutOfRange, BridgeChainNotSupported,
+///     BridgeOracleNotAuthorized, BridgePaused, BridgeSignatureInvalid,
+///     BridgeNonceAlreadyUsed). bridge.rs implemented a much larger multi-provider /
+///     attestation / nonce / retry system that lib.rs's actual "Cross-Chain Bridge"
+///     section never calls (it only uses storage:: directly for a simple
+///     single-oracle flow) — those bridge.rs functions were deleted as dead code.
+///     BridgeTradeExpired and BridgeTradeNotExpired are kept; lib.rs's simple flow
+///     returns both directly.
+///   - 9 variants never constructed anywhere in the crate, live or dead — evidently
+///     planned but never wired up: TradeExpired, TradeNotExpired,
+///     MigrationAlreadyApplied, OraclePriceInvalid, TierNotFound,
+///     TemplateVersionLimitExceeded, TemplateAmountMismatch, SubscriptionExpired,
+///     NoConsensus (multisig.rs never actually returns this — ties/no-majority just
+///     fall through to `VotingSummary.has_consensus == false`, no error path).
+///
+/// Ranges (of the surviving variants; gaps are the removed ids above):
+///   1–33    Core escrow / compliance / insurance / rating errors
+///   34–43   Tier / template / subscription errors
+///   70–73   Multi-sig arbitration errors
+///   84–85   Bridge errors (simple single-oracle flow)
+///   100–103 Oracle errors
+///   110–111 Price-trigger errors
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
@@ -34,9 +70,6 @@ pub enum ContractError {
     MetadataValueTooLong = 18,
     InvalidExpiry = 19,
     NoArbitrator = 20,
-    TradeExpired = 21,
-    TradeNotExpired = 22,
-    MigrationAlreadyApplied = 23,
     MigrationVersionMismatch = 24,
     BridgeOracleNotSet = 25,
     InsuranceProviderNotRegistered = 26,
@@ -47,57 +80,13 @@ pub enum ContractError {
     InvalidSplitBps = 31,
     InvalidRating = 32,
     AlreadyRated = 33,
-    // Tiers / templates / subscriptions (not all currently exposed as contract
-    // entry points — see reconstruction notes)
     InvalidTierConfig = 34,
-    TierNotFound = 35,
     TemplateNotFound = 36,
     TemplateInactive = 37,
     TemplateNameTooLong = 38,
-    TemplateVersionLimitExceeded = 39,
-    TemplateAmountMismatch = 40,
     SubscriptionNotFound = 41,
-    SubscriptionExpired = 42,
     SubscriptionAlreadyActive = 43,
-    // Governance (governance.rs is not currently wired into the contract)
-    ProposalNotFound = 44,
-    ProposalNotActive = 45,
-    InsufficientVotingPower = 46,
-    ProposalNotPassed = 47,
-    ProposalAlreadyExecuted = 48,
-    VotingEnded = 49,
-    // Privacy (privacy.rs is not currently wired into the contract)
-    PrivacyDataTooLong = 50,
-    DisclosureGrantNotFound = 51,
-    DisclosureUnauthorized = 52,
-    // Social (social.rs is not currently wired into the contract)
-    CannotFollowSelf = 53,
-    NotFollowing = 54,
-    // Oracle errors (40–44 in the doc comment above collide with the core
-    // range that grew past 39; kept in a dedicated 100s block instead)
-    OracleNotFound = 100,
-    OracleAlreadyRegistered = 101,
-    OracleListFull = 102,
-    OracleUnavailable = 103,
-    OraclePriceInvalid = 104,
-    // AMM errors (amm.rs is not currently wired into the contract)
-    AmmPoolNotFound = 120,
-    AmmSlippageExceeded = 121,
-    AmmInsufficientShares = 122,
-    AmmInvalidPair = 123,
-    AmmPoolAlreadyExists = 124,
-    // Upgrade system errors
-    /// An upgrade is already in progress (guard is set).
-    UpgradeInProgress = 60,
-    /// No upgrade proposal exists to execute or cancel.
-    NoUpgradeProposal = 61,
-    /// Timelock has not yet expired; upgrade cannot be executed yet.
-    UpgradeTimelockActive = 62,
-    /// No upgrade guard is set; migrate/rollback called out of sequence.
-    NoUpgradeInProgress = 63,
-    /// Rollback window has passed; state cannot be reverted automatically.
-    RollbackWindowExpired = 64,
-    // Multi-sig arbitration errors (70–74)
+    // Multi-sig arbitration errors (70–73)
     /// threshold == 0 or threshold > arbitrators count.
     InvalidMultiSigConfig = 70,
     /// Arbitrator has already cast a vote for this trade.
@@ -106,24 +95,14 @@ pub enum ContractError {
     VotingExpired = 72,
     /// Voting window has not yet expired; cannot force-resolve.
     VotingNotExpired = 73,
-    /// No consensus reached among arbitrators.
-    NoConsensus = 74,
-    // Bridge errors (80–94)
-    BridgeProviderNotFound = 80,
-    BridgeProviderAlreadyRegistered = 81,
-    BridgeProviderLimitExceeded = 82,
-    BridgeTradeNotFound = 83,
+    // Bridge errors (simple single-oracle flow; 84–85)
     BridgeTradeExpired = 84,
     BridgeTradeNotExpired = 85,
-    BridgeRetryLimitExceeded = 86,
-    BridgeAttestationInvalid = 87,
-    BridgeAttestationExpired = 88,
-    BridgeAmountOutOfRange = 89,
-    BridgeChainNotSupported = 90,
-    BridgeOracleNotAuthorized = 91,
-    BridgePaused = 92,
-    BridgeSignatureInvalid = 93,
-    BridgeNonceAlreadyUsed = 94,
+    // Oracle errors
+    OracleNotFound = 100,
+    OracleAlreadyRegistered = 101,
+    OracleListFull = 102,
+    OracleUnavailable = 103,
     // Price triggers
     NoTrigger = 110,
     PriceConditionNotMet = 111,

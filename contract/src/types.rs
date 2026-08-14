@@ -165,8 +165,15 @@ pub enum TradeStatus {
 pub enum DisputeResolution {
     ReleaseToBuyer,
     ReleaseToSeller,
-    /// `buyer_bps`: buyer's share of the net payout, in basis points (0-10000).
-    Partial { buyer_bps: u32 },
+    /// Buyer's share of the net payout, in basis points (0-10000).
+    ///
+    /// Tuple form (not `Partial { buyer_bps: u32 }`): soroban-sdk 21.7's
+    /// `#[contracttype]` derive on enums only supports unit variants and
+    /// unnamed (tuple) variants — named-field variants hit
+    /// `enum variant Partial has unsupported named fields` in
+    /// soroban-sdk-macros' `derive_enum.rs` (`Fields::Named` is explicitly
+    /// rejected; only `Fields::Unit` / `Fields::Unnamed` are handled).
+    Partial(u32),
 }
 
 // ---------------------------------------------------------------------------
