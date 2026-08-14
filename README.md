@@ -2,6 +2,18 @@
 
 Decentralized escrow on Stellar/Soroban Network.
 
+## Deployed Contract (Testnet)
+
+| | |
+|---|---|
+| **CONTRACT_ID** | [`CA7SKFUZAWMLVWPGBX6PYDFZTUBOTY76MXOBSBA2F2GV5LGCIG5BUXBZ`](https://stellar.expert/explorer/testnet/contract/CA7SKFUZAWMLVWPGBX6PYDFZTUBOTY76MXOBSBA2F2GV5LGCIG5BUXBZ) |
+| **Network** | Stellar Testnet |
+| **Admin** | `GAVWQNFKICCVKG7JSA5BK3L2S4Z6BDD3FVB5BBAJ46FUPPLIASFJPDH4` |
+| **Test USDC token** | [`CBUHAYBECGWXHG66MJHICF5LZYLOUH64FL5WDU47GAPU4X65BCIC73ZD`](https://stellar.expert/explorer/testnet/contract/CBUHAYBECGWXHG66MJHICF5LZYLOUH64FL5WDU47GAPU4X65BCIC73ZD) |
+| **Fee** | 100 bps (1%) |
+
+Verify directly on [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CA7SKFUZAWMLVWPGBX6PYDFZTUBOTY76MXOBSBA2F2GV5LGCIG5BUXBZ) — the deploy and `initialize` transactions are both on-chain and public.
+
 ## Features
 ✅ Trade creation form (preview + confirm)
 ✅ Buyer funding flow (USDC approval + tx confirmation) 
